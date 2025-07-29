@@ -430,9 +430,6 @@ git commit -m "feat: add amazing feature"
 - **Testing**: Comprehensive test coverage
 - **Documentation**: Clear component documentation
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
