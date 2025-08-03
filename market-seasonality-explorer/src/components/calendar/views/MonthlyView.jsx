@@ -1,12 +1,15 @@
 "use client";
+
 import {
   startOfYear,
   endOfYear,
   eachMonthOfInterval,
   format,
   isFuture,
+  startOfMonth,
 } from "date-fns";
 import { CalendarCell } from "../../CalendarCell";
+import { CalendarHeader } from "../CalendarHeader";
 
 export function MonthlyView({
   data,
@@ -15,19 +18,23 @@ export function MonthlyView({
   selectedDate,
   selectedDates,
   hoveredDate,
+  focusedDate,
   onCellClick,
   onCellHover,
   onCellLeave,
+  onCellFocus,
+  onCellKeyDown,
   loading,
   zoomLevel,
   isComparisonMode,
   getDataForDate,
   isDateSelected,
+  isDateFocused,
   currentDate,
-  isMobile,
-  isTablet,
-  isSmallMobile,
-  getResponsiveGridClasses,
+  handlePrevious,
+  handleNext,
+  handleToday,
+  currentTheme, // ENSURE currentTheme is passed through
 }) {
   const currentYear = currentDate.getFullYear();
   const yearStart = startOfYear(new Date(currentYear, 0, 1));
@@ -36,13 +43,11 @@ export function MonthlyView({
 
   const isMonthToday = (monthStart) => {
     const today = new Date();
-    return (
-      monthStart.getMonth() === today.getMonth() &&
-      monthStart.getFullYear() === today.getFullYear()
-    );
+    const currentMonthStart = startOfMonth(today);
+    return monthStart.getTime() === currentMonthStart.getTime();
   };
 
-  // Enhanced data generation for monthly view
+  // Enhanced data generation for monthly view - Fixed to prevent future data
   const getMonthlyData = (monthStart) => {
     // Don't generate data for future months
     if (isFuture(monthStart)) {
@@ -50,22 +55,23 @@ export function MonthlyView({
     }
 
     // First try to get existing data from the data prop
-    const existingData = data?.find((item) => {
-      if (!item?.timestamp) return false;
-      try {
-        const itemDate = new Date(item.timestamp);
-        return (
-          itemDate.getMonth() === monthStart.getMonth() &&
-          itemDate.getFullYear() === monthStart.getFullYear()
-        );
-      } catch {
-        return false;
+    const existingData = getDataForDate(monthStart);
+    if (existingData && existingData.close) {
+      // ENSURE existing data has change property
+      if (
+        existingData.change === undefined &&
+        existingData.open &&
+        existingData.close
+      ) {
+        existingData.change = existingData.close - existingData.open;
+        existingData.priceChange = existingData.change;
+        existingData.priceChangePercent =
+          (existingData.change / existingData.open) * 100;
       }
-    });
+      return existingData;
+    }
 
-    if (existingData && existingData.close) return existingData;
-
-    // Generate enhanced monthly data
+    // Generate enhanced monthly data with proper date handling
     const monthNumber = monthStart.getMonth() + 1;
     const yearNumber = monthStart.getFullYear();
 
@@ -74,20 +80,24 @@ export function MonthlyView({
       45000 +
       (yearNumber - 2020) * 5000 +
       monthNumber * 2000 +
-      Math.sin(monthNumber / 6) * 10000;
+      Math.sin((monthNumber / 12) * 2 * Math.PI) * 8000;
 
-    // Generate realistic volatility and volume
+    // Generate realistic volatility and volume for monthly data
     const volatility = Math.max(
       0.01,
-      0.03 + (Math.sin(monthNumber / 6) + 1) * 0.05
+      0.03 + (Math.sin(monthNumber / 6) + 1) * 0.04
     );
     const volume = Math.max(50000, 200000 + Math.random() * 500000);
 
     // Create realistic OHLC data
     const open = Math.max(1, basePrice * (0.95 + Math.random() * 0.1));
     const close = Math.max(1, basePrice * (0.95 + Math.random() * 0.1));
-    const high = Math.max(open, close) * (1.05 + Math.random() * 0.1);
-    const low = Math.min(open, close) * (0.9 + Math.random() * 0.1);
+    const high = Math.max(open, close) * (1.02 + Math.random() * 0.08);
+    const low = Math.min(open, close) * (0.92 + Math.random() * 0.08);
+
+    // Calculate change properly
+    const priceChange = close - open;
+    const priceChangePercent = (priceChange / open) * 100;
 
     return {
       timestamp: monthStart.toISOString(),
@@ -97,21 +107,37 @@ export function MonthlyView({
       close: Math.round(close * 100) / 100,
       volume: Math.round(volume),
       volatility: Math.round(volatility * 10000) / 10000,
-      liquidity: Math.round(volume * 0.7),
-      priceChange: Math.round((close - open) * 100) / 100,
-      priceChangePercent: Math.round(((close - open) / open) * 10000) / 100,
+      liquidity: Math.round(volume * 0.9),
+      // Add the change property that CalendarCell expects
+      change: Math.round(priceChange * 100) / 100,
+      priceChange: Math.round(priceChange * 100) / 100,
+      priceChangePercent: Math.round(priceChangePercent * 100) / 100,
     };
   };
 
   return (
     <div className="space-y-4">
-      {/* ✅ REMOVED: All duplicate navigation and titles */}
+      <CalendarHeader
+        currentDate={currentDate}
+        timeFrame={timeFrame}
+        onPrevious={handlePrevious}
+        onNext={handleNext}
+        onToday={handleToday}
+      />
 
-      {/* Responsive grid for monthly view */}
-      <div className={getResponsiveGridClasses()}>
+      <div className="text-center">
+        <h3 className="text-lg font-semibold">Monthly View - {currentYear}</h3>
+        <p className="text-sm text-muted-foreground">
+          Each cell represents a month
+        </p>
+      </div>
+
+      {/* Use a responsive grid that works well for 12 months */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 xl:grid-cols-4 gap-4">
         {months.map((monthStart, index) => {
           const cellData = getMonthlyData(monthStart);
           const isFutureMonth = isFuture(monthStart);
+
           return (
             <CalendarCell
               key={format(monthStart, "yyyy-MM")}
@@ -121,35 +147,36 @@ export function MonthlyView({
               filters={filters}
               isSelected={isDateSelected(monthStart)}
               isInRange={false}
-              isCurrentMonth={true}
+              isCurrentMonth={true} // Always true for monthly view
               isToday={isMonthToday(monthStart)}
               isHovered={
                 hoveredDate && hoveredDate.getTime() === monthStart.getTime()
               }
+              isFocused={isDateFocused(monthStart)}
               onClick={isFutureMonth ? undefined : onCellClick}
               onHover={
                 isFutureMonth ? undefined : (e) => onCellHover(monthStart, e)
               }
               onLeave={onCellLeave}
-              loading={false}
+              onFocus={onCellFocus}
+              onKeyDown={onCellKeyDown}
+              loading={false} // Always false since we generate data synchronously
               zoomLevel={zoomLevel}
               disabled={isFutureMonth}
-              isMobile={isMobile}
-              isTablet={isTablet}
-              isSmallMobile={isSmallMobile}
+              tabIndex={isFutureMonth ? -1 : 0}
+              currentTheme={currentTheme} // PASS currentTheme to CalendarCell
             />
           );
         })}
       </div>
 
-      {/* ✅ KEPT: Only the bottom informational text */}
       <div className="text-xs text-center text-muted-foreground bg-gray-50 p-2 rounded">
         📅 <strong>Monthly View:</strong> Each cell represents one month. Click
         to select a month for analysis.
         <br />
         <span className="text-xs">
-          Showing {months.length} months for {currentYear} | Use ←→ to navigate
-          years, ↑↓ to navigate quarters
+          Showing {months.filter((month) => !isFuture(month)).length} months for{" "}
+          {currentYear} | Use ←→ to navigate years
         </span>
       </div>
     </div>

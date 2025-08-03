@@ -36,7 +36,6 @@ export function useMarketData(symbol = "BTCUSDT", timeFrame = "daily") {
       const dayOfYear = Math.floor(
         (date - new Date(date.getFullYear(), 0, 0)) / (1000 * 60 * 60 * 24)
       );
-
       const basePrice =
         45000 +
         Math.sin((dayOfYear / 365) * 2 * Math.PI) * 10000 +
@@ -47,8 +46,8 @@ export function useMarketData(symbol = "BTCUSDT", timeFrame = "daily") {
         1 + Math.sin((dayOfYear / 365) * 2 * Math.PI) * 0.1;
       const weeklyPattern =
         1 + Math.sin((date.getDay() / 7) * 2 * Math.PI) * 0.05;
-
       const adjustedPrice = basePrice * seasonalMultiplier * weeklyPattern;
+
       const volatility = 0.01 + Math.random() * 0.08;
       const volume = 10000 + Math.random() * 100000;
 
@@ -57,6 +56,10 @@ export function useMarketData(symbol = "BTCUSDT", timeFrame = "daily") {
       const close = open * (0.95 + Math.random() * 0.1);
       const high = Math.max(open, close) * (1 + Math.random() * 0.05);
       const low = Math.min(open, close) * (0.95 + Math.random() * 0.05);
+
+      // CRITICAL: Calculate change properties that CalendarCell expects
+      const priceChange = close - open;
+      const priceChangePercent = (priceChange / open) * 100;
 
       data.push({
         timestamp: date.toISOString(),
@@ -67,6 +70,10 @@ export function useMarketData(symbol = "BTCUSDT", timeFrame = "daily") {
         volume: Math.round(volume),
         volatility: Math.round(volatility * 10000) / 10000,
         liquidity: Math.round(volume * 0.8),
+        // ADD THESE CRITICAL PROPERTIES:
+        change: Math.round(priceChange * 100) / 100,
+        priceChange: Math.round(priceChange * 100) / 100,
+        priceChangePercent: Math.round(priceChangePercent * 100) / 100,
       });
     }
 
@@ -121,15 +128,25 @@ export function useMarketData(symbol = "BTCUSDT", timeFrame = "daily") {
           const liquidity =
             Number.parseFloat(volume) * Number.parseFloat(close);
 
+          // CRITICAL: Calculate change properties that CalendarCell expects
+          const openPrice = Number.parseFloat(open);
+          const closePrice = Number.parseFloat(close);
+          const priceChange = closePrice - openPrice;
+          const priceChangePercent = (priceChange / openPrice) * 100;
+
           return {
             timestamp: new Date(openTime).toISOString(),
-            open: Number.parseFloat(open),
+            open: openPrice,
             high: Number.parseFloat(high),
             low: Number.parseFloat(low),
-            close: Number.parseFloat(close),
+            close: closePrice,
             volume: Number.parseFloat(volume),
             volatility: volatility,
             liquidity: liquidity,
+            // ADD THESE CRITICAL PROPERTIES:
+            change: Math.round(priceChange * 100) / 100,
+            priceChange: Math.round(priceChange * 100) / 100,
+            priceChangePercent: Math.round(priceChangePercent * 100) / 100,
           };
         });
 

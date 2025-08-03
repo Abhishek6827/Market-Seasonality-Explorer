@@ -1,92 +1,99 @@
 "use client";
-import { useEffect, useRef } from "react";
-import { DailyView } from "./views/DailyView";
+
+import { isSameMonth, isToday } from "date-fns";
+import { CalendarCell } from "../CalendarCell";
 import ErrorBoundary from "../ErrorBoundary";
 
-export function CalendarGrid({
+export default function CalendarGrid({
+  days,
   data,
   timeFrame,
+  filters,
   selectedDate,
   selectedDates,
-  onDateSelect,
-  onDatesSelect,
+  hoveredDate,
+  focusedDate,
+  currentDate,
+  onCellClick,
+  onCellHover,
+  onCellLeave,
+  onCellFocus,
+  onCellKeyDown,
   loading,
   zoomLevel,
   isComparisonMode,
+  getDataForDate,
+  isDateSelected,
+  isDateFocused,
   currentTheme,
 }) {
-  const gridRef = useRef(null);
-
-  // Handle keyboard navigation at grid level
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      // Only handle if the grid or its children have focus
-      if (!gridRef.current?.contains(document.activeElement)) return;
-
-      // Let individual views handle their own keyboard events
-      // This is just a fallback for grid-level shortcuts
-      switch (e.key) {
-        case "Tab":
-          // Allow normal tab navigation
-          break;
-        default:
-          // Let child components handle other keys
-          break;
-      }
-    };
-
-    document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, []);
-
-  const renderView = () => {
-    switch (timeFrame) {
-      case "daily":
-        return (
-          <DailyView
-            data={data}
-            selectedDate={selectedDate}
-            selectedDates={selectedDates}
-            onDateSelect={onDateSelect}
-            onDatesSelect={onDatesSelect}
-            loading={loading}
-            zoomLevel={zoomLevel}
-            isComparisonMode={isComparisonMode}
-            currentTheme={currentTheme}
-          />
-        );
-      case "weekly":
-        // Weekly view would go here
-        return (
-          <div className="p-8 text-center text-gray-500">
-            Weekly view coming soon...
-          </div>
-        );
-      case "monthly":
-        // Monthly view would go here
-        return (
-          <div className="p-8 text-center text-gray-500">
-            Monthly view coming soon...
-          </div>
-        );
-      default:
-        return (
-          <div className="p-8 text-center text-red-500">
-            Unknown time frame: {timeFrame}
-          </div>
-        );
-    }
-  };
-
   return (
     <ErrorBoundary>
-      <div
-        ref={gridRef}
-        className="calendar-grid w-full"
-        role="grid"
-        aria-label={`${timeFrame} calendar view`}
-      >
-        {renderView()}
+      <div className="space-y-2">
+        {/* Days of week header - responsive */}
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
+          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(
+            (day, index) => (
+              <div
+                key={day}
+                className="p-1 sm:p-2 text-center text-xs sm:text-sm font-medium text-gray-500"
+              >
+                <span className="hidden xs:inline">{day}</span>
+                <span className="xs:hidden">{day.charAt(0)}</span>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* Calendar grid using CalendarCell components */}
+        <div
+          className={`grid grid-cols-7 gap-1 sm:gap-2 ${
+            zoomLevel === "xlarge"
+              ? "gap-1"
+              : zoomLevel === "large"
+              ? "gap-1.5"
+              : "gap-1 sm:gap-2"
+          }`}
+        >
+          {days.map((date, index) => {
+            const dayData = getDataForDate(date);
+            const isSelected = isDateSelected(date);
+            const isDayToday = isToday(date);
+            const isCurrentMonth = isSameMonth(date, currentDate);
+            const isHovered =
+              hoveredDate && date.getTime() === hoveredDate.getTime();
+            const isFocused = isDateFocused && isDateFocused(date);
+
+            return (
+              <CalendarCell
+                key={`${date.getTime()}-${index}`}
+                date={date}
+                data={dayData}
+                timeFrame={timeFrame}
+                filters={filters}
+                isSelected={isSelected}
+                isInRange={false}
+                isCurrentMonth={isCurrentMonth}
+                isToday={isDayToday}
+                isHovered={isHovered}
+                isFocused={isFocused}
+                onClick={onCellClick}
+                onHover={onCellHover}
+                onLeave={onCellLeave}
+                onFocus={onCellFocus}
+                onKeyDown={onCellKeyDown}
+                loading={loading}
+                zoomLevel={zoomLevel}
+                disabled={false}
+                tabIndex={0}
+                currentTheme={currentTheme}
+                className={`touch-manipulation select-none active:scale-95 ${
+                  zoomLevel === "xlarge" ? "max-w-[125px]" : ""
+                }`}
+              />
+            );
+          })}
+        </div>
       </div>
     </ErrorBoundary>
   );

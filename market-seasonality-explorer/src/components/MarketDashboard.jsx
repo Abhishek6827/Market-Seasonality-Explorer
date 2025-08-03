@@ -1,20 +1,29 @@
 "use client";
-import { useState, useEffect } from "react";
+
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useMarketData } from "../hooks/use-market-data";
 import { FilterControls } from "./FilterControls";
 import { ExportControls } from "./ExportControls";
 import { ThemeControls, COLOR_SCHEMES } from "./ThemeControls";
+import { ZoomControls } from "./ZoomControls";
 import { CalendarView } from "./CalendarView";
 import { EnhancedDataDashboard } from "./EnhancedDataDashboard";
-import { ZoomControls } from "./ZoomControls";
 import { AlertSystem } from "./AlertSystem";
 import { LiveChart } from "./LiveChart";
 import { OrderBook } from "./OrderBook";
 import { PatternDetector } from "./patterns/PatternDetector";
 import ErrorBoundary from "./ErrorBoundary";
 import { FadeIn, SlideIn } from "./animations/FadeIn";
+
+// Import new advanced features
+import { IntradayVolatilityRanges } from "./advanced/IntradayVolatilityRanges";
+import { AdvancedLiquidityMetrics } from "./advanced/AdvancedLiquidityMetrics";
+import { WeeklyPatterns } from "./advanced/WeeklyPatterns";
+import { SeasonalTrendAnalysis } from "./advanced/SeasonalTrendAnalysis";
+import { MonthlyLiquidityPatterns } from "./advanced/MonthlyLiquidityPatterns";
+import { SeasonalCorrelationAnalysis } from "./advanced/SeasonalCorrelationAnalysis";
 
 export function MarketDashboard() {
   const [selectedDate, setSelectedDate] = useState(null);
@@ -36,12 +45,19 @@ export function MarketDashboard() {
     timeFrame
   );
 
+  // FIXED: Safe refetch interval with proper cleanup
   useEffect(() => {
-    const interval = setInterval(() => {
-      refetch();
-    }, 30000);
-    return () => clearInterval(interval);
-  }, [refetch]);
+    if (!loading && !error) {
+      const interval = setInterval(() => {
+        try {
+          refetch();
+        } catch (err) {
+          console.warn("Refetch failed:", err);
+        }
+      }, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [refetch, loading, error]);
 
   // Clear selections when switching time frames
   useEffect(() => {
@@ -51,19 +67,20 @@ export function MarketDashboard() {
     setActiveAnalyticsTab("single");
   }, [timeFrame]);
 
-  // Handle filter changes and update theme
-  const handleFiltersChange = (newFilters) => {
+  // FIXED: Handle filter changes with useCallback
+  const handleFiltersChange = useCallback((newFilters) => {
+    console.log("🔧 Filters changing:", newFilters);
     setFilters(newFilters);
-  };
+  }, []);
 
-  const handleDateSelect = (date) => {
+  const handleDateSelect = useCallback((date) => {
     setSelectedDate(date);
     setSelectedDates([]);
     setIsComparisonMode(false);
     setActiveAnalyticsTab("single");
-  };
+  }, []);
 
-  const handleDatesSelect = (dates) => {
+  const handleDatesSelect = useCallback((dates) => {
     setSelectedDates(dates);
     setSelectedDate(null);
     setIsComparisonMode(dates.length >= 2);
@@ -72,14 +89,30 @@ export function MarketDashboard() {
     } else if (dates.length === 1) {
       setActiveAnalyticsTab("single");
     }
-  };
+  }, []);
 
-  const handleThemeChange = (theme) => {
-    setCurrentTheme(theme);
-  };
+  // FIXED: Proper theme change handler without infinite loops
+  const handleThemeChange = useCallback(
+    (theme) => {
+      console.log(
+        "🎨 Theme changing from",
+        currentTheme.name,
+        "to",
+        theme.name
+      );
+      setCurrentTheme(theme);
+    },
+    [currentTheme.name]
+  );
 
-  // Get selected data for pattern detection
-  const getSelectedData = () => {
+  // FIXED: Zoom change handler with useCallback
+  const handleZoomChange = useCallback((newZoomLevel) => {
+    console.log("🔍 Zoom changing to:", newZoomLevel);
+    setZoomLevel(newZoomLevel);
+  }, []);
+
+  // Get selected data for pattern detection - memoized for performance
+  const getSelectedData = useMemo(() => {
     if (selectedDates.length > 0) {
       return data.filter((item) => {
         const itemDate = new Date(item.timestamp);
@@ -95,7 +128,7 @@ export function MarketDashboard() {
       });
     }
     return [];
-  };
+  }, [data, selectedDate, selectedDates]);
 
   return (
     <ErrorBoundary>
@@ -103,7 +136,7 @@ export function MarketDashboard() {
         className="min-h-screen bg-background p-2 sm:p-4"
         data-calendar-container
       >
-        <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
+        <div className="mx-auto max-w-7xl space-y-3 sm:space-y-4">
           {/* Header */}
           <ErrorBoundary>
             <FadeIn className="text-center space-y-2">
@@ -117,23 +150,23 @@ export function MarketDashboard() {
             </FadeIn>
           </ErrorBoundary>
 
-          {/* Controls */}
-          <div className="space-y-3 sm:space-y-4">
-            {/* Main Controls Row */}
+          {/* COMPACT Controls Layout */}
+          <div className="space-y-2">
+            {/* Row 1: Main Controls - More Compact */}
             <ErrorBoundary>
-              <SlideIn
-                direction="left"
-                className="space-y-4 lg:space-y-0 lg:flex lg:gap-4"
-              >
-                <Card className="flex-1 p-3 sm:p-4">
-                  <FilterControls
-                    filters={filters}
-                    onFiltersChange={handleFiltersChange}
-                    loading={loading}
-                  />
-                </Card>
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 lg:flex-row">
-                  <Card className="p-3 sm:p-4 flex-1 sm:flex-none">
+              <SlideIn direction="left">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
+                  {/* Filters - Takes more space */}
+                  <Card className="lg:col-span-6 p-2 sm:p-3">
+                    <FilterControls
+                      filters={filters}
+                      onFiltersChange={handleFiltersChange}
+                      loading={loading}
+                    />
+                  </Card>
+
+                  {/* Export - Compact */}
+                  <Card className="lg:col-span-3 p-2 sm:p-3">
                     <ExportControls
                       data={data}
                       selectedDate={selectedDate}
@@ -142,8 +175,25 @@ export function MarketDashboard() {
                       symbol={filters.symbol}
                     />
                   </Card>
-                  <Card className="p-3 sm:p-4 flex-1 sm:flex-none">
+
+                  {/* Theme - Compact */}
+                  <Card className="lg:col-span-3 p-2 sm:p-3">
                     <ThemeControls onThemeChange={handleThemeChange} />
+                  </Card>
+                </div>
+              </SlideIn>
+            </ErrorBoundary>
+
+            {/* Row 2: Zoom Controls - Single Row */}
+            <ErrorBoundary>
+              <SlideIn direction="right" delay={0.1}>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
+                  {/* Zoom Controls - Full width */}
+                  <Card className="lg:col-span-12 p-2 sm:p-3">
+                    <ZoomControls
+                      zoomLevel={zoomLevel}
+                      onZoomChange={handleZoomChange}
+                    />
                   </Card>
                 </div>
               </SlideIn>
@@ -184,14 +234,8 @@ export function MarketDashboard() {
                           </TabsTrigger>
                         </TabsList>
                       </Tabs>
-                      <div className="flex items-center space-x-2">
-                        <ZoomControls
-                          zoomLevel={zoomLevel}
-                          onZoomChange={setZoomLevel}
-                          className="scale-90 sm:scale-100"
-                        />
-                      </div>
                     </div>
+
                     <Tabs
                       value={timeFrame}
                       onValueChange={(value) => setTimeFrame(value)}
@@ -199,7 +243,7 @@ export function MarketDashboard() {
                       <TabsContent value="daily" className="mt-6">
                         <CalendarView
                           data={data}
-                          timeFrame="daily"
+                          timeFrame={timeFrame}
                           filters={filters}
                           selectedDate={selectedDate}
                           selectedDates={selectedDates}
@@ -310,12 +354,72 @@ export function MarketDashboard() {
                   </div>
                 </Card>
 
+                {/* Advanced Features Section */}
+                <div className="space-y-4">
+                  {/* Daily View Advanced Features */}
+                  {timeFrame === "daily" && (
+                    <>
+                      <ErrorBoundary>
+                        <IntradayVolatilityRanges
+                          data={data}
+                          selectedDate={selectedDate}
+                          timeFrame={timeFrame}
+                        />
+                      </ErrorBoundary>
+                      <ErrorBoundary>
+                        <AdvancedLiquidityMetrics
+                          data={data}
+                          selectedDate={selectedDate}
+                          timeFrame={timeFrame}
+                        />
+                      </ErrorBoundary>
+                    </>
+                  )}
+
+                  {/* Weekly View Advanced Features */}
+                  {timeFrame === "weekly" && (
+                    <>
+                      <ErrorBoundary>
+                        <WeeklyPatterns
+                          data={data}
+                          selectedDate={selectedDate}
+                          timeFrame={timeFrame}
+                        />
+                      </ErrorBoundary>
+                      <ErrorBoundary>
+                        <SeasonalTrendAnalysis
+                          data={data}
+                          timeFrame={timeFrame}
+                        />
+                      </ErrorBoundary>
+                    </>
+                  )}
+
+                  {/* Monthly View Advanced Features */}
+                  {timeFrame === "monthly" && (
+                    <>
+                      <ErrorBoundary>
+                        <MonthlyLiquidityPatterns
+                          data={data}
+                          timeFrame={timeFrame}
+                        />
+                      </ErrorBoundary>
+                      <ErrorBoundary>
+                        <SeasonalCorrelationAnalysis
+                          data={data}
+                          timeFrame={timeFrame}
+                        />
+                      </ErrorBoundary>
+                    </>
+                  )}
+                </div>
+
                 {/* Pattern Detection & Live Chart */}
                 <div className="grid grid-cols-1 xl:grid-cols-1 gap-4">
                   <ErrorBoundary>
                     <PatternDetector
                       data={data}
-                      selectedData={getSelectedData()}
+                      selectedData={getSelectedData}
                     />
                   </ErrorBoundary>
                   <ErrorBoundary>

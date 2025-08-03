@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useCallback } from "react";
 import { Button } from "./ui/button";
 import { Switch } from "./ui/switch";
@@ -119,11 +120,11 @@ export function InteractionControls({
 
   return (
     <ErrorBoundary>
-      <div className={`space-y-4 ${className}`}>
+      <div className={`space-y-3 ${className}`}>
         {/* Header */}
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-medium flex items-center space-x-2">
-            <Crosshair className="h-4 w-4" />
+          <h3 className="text-xs font-medium flex items-center space-x-2">
+            <Crosshair className="h-3 w-3" />
             <span>Interaction Controls</span>
           </h3>
           <Switch
@@ -136,7 +137,7 @@ export function InteractionControls({
         {/* Interaction Mode Selection */}
         <div className="space-y-2">
           <Label className="text-xs font-medium">Interaction Mode</Label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-1">
             {Object.entries(INTERACTION_MODES).map(([key, mode]) => {
               const IconComponent = mode.icon;
               return (
@@ -145,7 +146,7 @@ export function InteractionControls({
                   variant={interactionMode === key ? "default" : "outline"}
                   size="sm"
                   onClick={() => handleInteractionModeChange(key)}
-                  className="flex items-center space-x-1 text-xs h-8 justify-start"
+                  className="flex items-center space-x-1 text-xs h-7 justify-start"
                   title={mode.description}
                 >
                   <IconComponent className="h-3 w-3" />
@@ -179,7 +180,7 @@ export function InteractionControls({
 
         {/* Advanced Controls */}
         {isAdvancedMode && (
-          <div className="space-y-4 border-t pt-4">
+          <div className="space-y-3 border-t pt-3">
             {/* Filter Controls */}
             <div className="space-y-2">
               <Label className="text-xs font-medium flex items-center space-x-1">
@@ -187,7 +188,7 @@ export function InteractionControls({
                 <span>Instrument Filter</span>
               </Label>
               <Select value={filterType} onValueChange={onFilterChange}>
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-7 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -211,7 +212,7 @@ export function InteractionControls({
                 <span>Analysis Period</span>
               </Label>
               <Select value={timePeriod} onValueChange={onTimePeriodChange}>
-                <SelectTrigger className="h-8 text-xs">
+                <SelectTrigger className="h-7 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -231,7 +232,7 @@ export function InteractionControls({
             {/* Metric Types */}
             <div className="space-y-2">
               <Label className="text-xs font-medium">Display Metrics</Label>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 gap-1">
                 {METRIC_TYPES.map((metric) => (
                   <div
                     key={metric.value}
@@ -262,7 +263,7 @@ export function InteractionControls({
         )}
 
         {/* Quick Actions */}
-        <div className="flex flex-wrap gap-2 pt-2 border-t">
+        <div className="flex flex-wrap gap-1 pt-2 border-t">
           <Button
             variant="outline"
             size="sm"
@@ -270,7 +271,7 @@ export function InteractionControls({
               onInteractionModeChange?.("hover");
               onTooltipToggle?.(true);
             }}
-            className="text-xs"
+            className="text-xs h-7"
           >
             Enable Hover
           </Button>
@@ -281,7 +282,7 @@ export function InteractionControls({
               onInteractionModeChange?.("select");
               onTooltipToggle?.(true);
             }}
-            className="text-xs"
+            className="text-xs h-7"
           >
             Range Select
           </Button>
@@ -292,7 +293,7 @@ export function InteractionControls({
               onMetricsChange?.(["price", "volume", "volatility"]);
               onFilterChange?.("all");
             }}
-            className="text-xs"
+            className="text-xs h-7"
           >
             Reset Filters
           </Button>

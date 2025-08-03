@@ -1,4 +1,5 @@
 "use client";
+
 import { useState, useCallback } from "react";
 import { Button } from "./ui/button";
 import {
@@ -45,51 +46,55 @@ export function ExportControls({
     }
   }, [data, selectedDate, selectedDates]);
 
-  const exportToCSV = useCallback(async () => {
-    try {
-      setIsExporting(true);
+  const exportToCSV = useCallback(
+    (data) => {
+      try {
+        const headers = [
+          "Date",
+          "Open",
+          "High",
+          "Low",
+          "Close",
+          "Volume",
+          "Volatility",
+          "Liquidity",
+        ];
+        const csvContent = [
+          headers.join(","),
+          ...data.map((item) =>
+            [
+              format(new Date(item.timestamp), "yyyy-MM-dd"),
+              item.open,
+              item.high,
+              item.low,
+              item.close,
+              item.volume,
+              item.volatility,
+              item.liquidity,
+            ].join(",")
+          ),
+        ].join("\n");
 
-      let exportData = data;
-      if (selectedDates.length > 0) {
-        exportData = data.filter((item) => {
-          const itemDate = new Date(item.timestamp);
-          return selectedDates.some(
-            (date) => itemDate.toDateString() === date.toDateString()
-          );
+        const blob = new Blob([csvContent], {
+          type: "text/csv;charset=utf-8;",
         });
-      } else if (selectedDate) {
-        exportData = data.filter((item) => {
-          const itemDate = new Date(item.timestamp);
-          return itemDate.toDateString() === selectedDate.toDateString();
-        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `market-data-${symbol}-${format(
+          new Date(),
+          "yyyy-MM-dd"
+        )}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("CSV export failed:", error);
       }
-
-      const csvContent = [
-        ["Date", "Price", "Volume", "Change", "Volatility"].join(","),
-        ...exportData.map((item) =>
-          [
-            new Date(item.timestamp).toISOString().split("T")[0],
-            item.price || 0,
-            item.volume || 0,
-            item.change || 0,
-            item.volatility || 0,
-          ].join(",")
-        ),
-      ].join("\n");
-
-      const blob = new Blob([csvContent], { type: "text/csv" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${symbol}_${timeFrame}_data.csv`;
-      a.click();
-      window.URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error("Export error:", error);
-    } finally {
-      setIsExporting(false);
-    }
-  }, [data, selectedDate, selectedDates, symbol, timeFrame]);
+    },
+    [symbol]
+  );
 
   const exportToJSON = useCallback(
     (data) => {
@@ -132,13 +137,8 @@ export function ExportControls({
 
   const exportToPNG = useCallback(async () => {
     try {
-      setIsExporting(true);
-      // Simulate export delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Exporting to PNG...");
       // Dynamic import to avoid SSR issues
       const html2canvas = await import("html2canvas");
-
       // Find the calendar container
       const calendarElement = document.querySelector(
         "[data-calendar-container]"
@@ -233,21 +233,14 @@ export function ExportControls({
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       });
-    } finally {
-      setIsExporting(false);
     }
   }, [symbol, getExportData]);
 
   const exportToPDF = useCallback(async () => {
-    setIsExporting(true);
     try {
-      // Simulate export delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Exporting to PDF...");
       // Dynamic import to avoid SSR issues
       const jsPDF = await import("jspdf");
       const html2canvas = await import("html2canvas");
-
       const pdf = new jsPDF.jsPDF("p", "mm", "a4");
       const exportData = getExportData();
 
@@ -336,8 +329,8 @@ export function ExportControls({
         pdf.addPage();
         pdf.setFontSize(16);
         pdf.text("Data Details", 20, 20);
-
         pdf.setFontSize(10);
+
         let y = 40;
         const lineHeight = 6;
 
@@ -349,7 +342,6 @@ export function ExportControls({
         pdf.text("Close", 110, y);
         pdf.text("Volume", 130, y);
         pdf.text("Volatility", 160, y);
-
         y += lineHeight;
 
         // Table data
@@ -424,8 +416,6 @@ export function ExportControls({
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
-    } finally {
-      setIsExporting(false);
     }
   }, [symbol, timeFrame, selectedDate, selectedDates, getExportData]);
 
@@ -436,7 +426,7 @@ export function ExportControls({
     try {
       switch (exportFormat) {
         case "csv":
-          exportToCSV();
+          exportToCSV(exportData);
           break;
         case "json":
           exportToJSON(exportData);
@@ -467,53 +457,53 @@ export function ExportControls({
   const getFormatIcon = useCallback((format) => {
     switch (format) {
       case "csv":
-        return <Table className="h-4 w-4" />;
+        return <Table className="h-3 w-3" />;
       case "json":
-        return <FileText className="h-4 w-4" />;
+        return <FileText className="h-3 w-3" />;
       case "png":
-        return <ImageIcon className="h-4 w-4" />;
+        return <ImageIcon className="h-3 w-3" />;
       case "pdf":
-        return <FileText className="h-4 w-4" />;
+        return <FileText className="h-3 w-3" />;
       default:
-        return <Download className="h-4 w-4" />;
+        return <Download className="h-3 w-3" />;
     }
   }, []);
 
   return (
     <ErrorBoundary>
-      <div className="space-y-4">
-        <h3 className="text-sm font-medium flex items-center space-x-2">
-          <Download className="h-4 w-4" />
+      <div className="space-y-3">
+        <h3 className="text-xs font-medium flex items-center space-x-2">
+          <Download className="h-3 w-3" />
           <span>Export Data</span>
         </h3>
 
         <div className="flex flex-col gap-2">
           <Select value={exportFormat} onValueChange={setExportFormat}>
-            <SelectTrigger className="w-full">
+            <SelectTrigger className="w-full h-8 text-xs">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="csv">
                 <div className="flex items-center space-x-2">
-                  <Table className="h-4 w-4" />
+                  <Table className="h-3 w-3" />
                   <span>CSV</span>
                 </div>
               </SelectItem>
               <SelectItem value="json">
                 <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4" />
+                  <FileText className="h-3 w-3" />
                   <span>JSON</span>
                 </div>
               </SelectItem>
               <SelectItem value="png">
                 <div className="flex items-center space-x-2">
-                  <ImageIcon className="h-4 w-4" />
+                  <ImageIcon className="h-3 w-3" />
                   <span>PNG Image</span>
                 </div>
               </SelectItem>
               <SelectItem value="pdf">
                 <div className="flex items-center space-x-2">
-                  <FileText className="h-4 w-4" />
+                  <FileText className="h-3 w-3" />
                   <span>PDF Report</span>
                 </div>
               </SelectItem>
@@ -523,38 +513,15 @@ export function ExportControls({
           <Button
             onClick={handleExport}
             disabled={isExporting || data.length === 0}
-            className="flex items-center space-x-2"
+            className="flex items-center space-x-2 h-8 text-xs"
           >
             {isExporting ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className="h-3 w-3 animate-spin" />
             ) : (
               getFormatIcon(exportFormat)
             )}
             <span>{isExporting ? "Exporting..." : "Export"}</span>
           </Button>
-
-          <div className="flex flex-col space-y-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportToCSV}
-              disabled={isExporting || !data.length}
-              className="w-full justify-start bg-transparent"
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              {isExporting ? "Exporting..." : "Export CSV"}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={exportToPNG}
-              disabled={isExporting}
-              className="w-full justify-start bg-transparent"
-            >
-              <ImageIcon className="h-4 w-4 mr-2" />
-              {isExporting ? "Exporting..." : "Export PNG"}
-            </Button>
-          </div>
         </div>
 
         <div className="text-xs text-muted-foreground space-y-1">
