@@ -206,7 +206,7 @@ export function MarketDashboard() {
             <div className="xl:col-span-3 xl:sticky xl:top-4 self-start">
               <ErrorBoundary>
                 <SlideIn direction="up">
-                  <Card className="p-2 sm:p-4 lg:p-6">
+                  <Card className="p-2 sm:p-4 lg:p-6 xl:max-h-[calc(100vh-2rem)] xl:overflow-y-auto custom-scrollbar">
                     <div className="flex flex-col space-y-4">
                       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0">
                         <Tabs
