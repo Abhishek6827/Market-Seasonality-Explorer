@@ -56,53 +56,29 @@ export function ZoomControls({
     ZOOM_LEVELS.find((level) => level.value === zoomLevel) || ZOOM_LEVELS[1];
 
   return (
-    <div className={`space-y-2 ${className}`}>
-      <div className="flex items-center space-x-1">
-        <ZoomIn className="h-3 w-3 text-gray-500" />
-        <h3 className="text-xs font-medium">Zoom</h3>
+    <div className={`space-y-3 ${className}`}>
+      <div className="flex items-center gap-2 pb-2 border-b">
+        <ZoomIn className="h-4 w-4 text-blue-600" />
+        <h3 className="text-sm font-semibold">Zoom</h3>
       </div>
 
-      {/* Zoom Level Select */}
-      <select
-        value={zoomLevel}
-        onChange={handleZoomChange}
-        className="w-full h-8 text-xs border border-gray-300 rounded px-2 bg-white"
-      >
+      <div className="grid grid-cols-4 gap-2">
         {ZOOM_LEVELS.map((level) => (
-          <option key={level.value} value={level.value}>
-            {level.label} ({Math.round(level.scale * 100)}%)
-          </option>
+          <button
+            key={level.value}
+            onClick={() => onZoomChange && onZoomChange(level.value)}
+            className={`h-10 px-2 text-xs font-semibold rounded-lg transition-all duration-300 ${
+              zoomLevel === level.value
+                ? "bg-gradient-to-r from-primary to-primary/90 text-primary-foreground shadow-md scale-105"
+                : "bg-background/80 backdrop-blur-sm border border-white/20 hover:bg-background/90 hover:shadow-md"
+            }`}
+          >
+            {level.label}
+            <div className="text-[10px] opacity-70">
+              {Math.round(level.scale * 100)}%
+            </div>
+          </button>
         ))}
-      </select>
-
-      {/* Quick Zoom Buttons */}
-      <div className="flex space-x-1">
-        <button
-          onClick={handleZoomOut}
-          disabled={zoomLevel === "small"}
-          className="flex-1 h-7 text-xs px-1 border border-gray-300 rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-        >
-          <ZoomOut className="h-3 w-3" />
-        </button>
-        <button
-          onClick={handleReset}
-          className="flex-1 h-7 text-xs px-1 border border-gray-300 rounded bg-white hover:bg-gray-50 flex items-center justify-center"
-          title="Reset to Normal"
-        >
-          <RotateCcw className="h-3 w-3" />
-        </button>
-        <button
-          onClick={handleZoomIn}
-          disabled={zoomLevel === "xlarge"}
-          className="flex-1 h-7 text-xs px-1 border border-gray-300 rounded bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-        >
-          <ZoomIn className="h-3 w-3" />
-        </button>
-      </div>
-
-      {/* Current Zoom Info */}
-      <div className="text-xs text-center text-gray-500">
-        {Math.round(currentZoom.scale * 100)}%
       </div>
     </div>
   );

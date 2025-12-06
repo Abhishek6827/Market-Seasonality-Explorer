@@ -27,7 +27,7 @@ export function CalendarView({
   selectedDates = [],
   onDateSelect,
   onDatesSelect,
-  loading,
+  loading: _loading,
   zoomLevel = "normal",
   isComparisonMode = false,
   currentTheme, // ENSURE this prop is received

@@ -472,12 +472,12 @@ export function ExportControls({
   return (
     <ErrorBoundary>
       <div className="space-y-3">
-        <h3 className="text-xs font-medium flex items-center space-x-2">
-          <Download className="h-3 w-3" />
-          <span>Export Data</span>
-        </h3>
+        <div className="flex items-center gap-2 pb-2 border-b">
+          <Download className="h-4 w-4 text-blue-600" />
+          <h3 className="text-sm font-semibold">Export Data</h3>
+        </div>
 
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2.5">
           <Select value={exportFormat} onValueChange={setExportFormat}>
             <SelectTrigger className="w-full h-8 text-xs">
               <SelectValue />

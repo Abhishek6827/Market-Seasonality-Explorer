@@ -23,7 +23,12 @@ import {
   Zap,
 } from "lucide-react";
 
-export function LiveChart({ data, symbol, selectedDate, selectedDateRange }) {
+export function LiveChart({
+  data: _data,
+  symbol: _symbol,
+  selectedDate: _selectedDate,
+  selectedDates: _selectedDates,
+}) {
   const [chartType, setChartType] = useState("volatility");
   const [isLive, setIsLive] = useState(true);
   const [liveData, setLiveData] = useState([]);

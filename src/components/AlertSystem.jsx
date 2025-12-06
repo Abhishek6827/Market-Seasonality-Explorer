@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { format } from "date-fns";
 
-export function AlertSystem({ data, symbol }) {
+export function AlertSystem({ data }) {
   const [alerts, setAlerts] = useState([]);
   const [newAlert, setNewAlert] = useState({
     type: "volatility",
@@ -37,12 +37,14 @@ export function AlertSystem({ data, symbol }) {
   });
   const [triggeredAlerts, setTriggeredAlerts] = useState([]);
 
-  // Check alerts against latest data
+  // Check alerts against latest data - FIXED: Allows re-triggering
   useEffect(() => {
     if (data.length === 0) return;
 
     const latestData = data[data.length - 1];
     const newTriggeredAlerts = [];
+    const now = new Date().getTime();
+    const COOLDOWN_MS = 30000; // 30 second cooldown before re-triggering
 
     alerts.forEach((alert) => {
       if (!alert.isActive) return;
@@ -65,18 +67,33 @@ export function AlertSystem({ data, symbol }) {
           ? currentValue > alert.threshold
           : currentValue < alert.threshold;
 
-      if (shouldTrigger && !alert.triggeredAt) {
+      // FIXED: Check cooldown period instead of just triggeredAt
+      const lastTriggerTime = alert.lastTriggeredAt
+        ? new Date(alert.lastTriggeredAt).getTime()
+        : 0;
+      const canTriggerAgain = now - lastTriggerTime > COOLDOWN_MS;
+
+      if (shouldTrigger && canTriggerAgain) {
+        // Alert condition met - trigger it
         const triggeredAlert = {
           ...alert,
-          triggeredAt: new Date().toISOString(),
+          triggeredAt: new Date().toISOString(), // For display in triggered list
+          lastTriggeredAt: new Date().toISOString(), // For cooldown tracking
           currentValue,
         };
         newTriggeredAlerts.push(triggeredAlert);
 
-        // Update the alert to mark it as triggered
+        // Update the alert with last trigger time
         setAlerts((prev) =>
-          prev.map((a) => (a.id === alert.id ? triggeredAlert : a))
+          prev.map((a) =>
+            a.id === alert.id
+              ? { ...a, lastTriggeredAt: triggeredAlert.lastTriggeredAt }
+              : a
+          )
         );
+      } else if (!shouldTrigger && alert.lastTriggeredAt) {
+        // FIXED: Condition returned to normal - ready for next trigger
+        // This is just for internal tracking, no UI update needed
       }
     });
 
@@ -88,10 +105,17 @@ export function AlertSystem({ data, symbol }) {
   const addAlert = () => {
     if (newAlert.threshold <= 0) return;
 
+    // For volume, multiply by 1000 to convert K to actual value
+    // User enters 2 for 2K, we store 2000
+    const actualThreshold =
+      newAlert.type === "volume"
+        ? newAlert.threshold * 1000
+        : newAlert.threshold;
+
     const alert = {
       id: Date.now().toString(),
       type: newAlert.type,
-      threshold: newAlert.threshold,
+      threshold: actualThreshold,
       condition: newAlert.condition,
       isActive: true,
       createdAt: new Date().toISOString(),
@@ -109,7 +133,12 @@ export function AlertSystem({ data, symbol }) {
     setAlerts((prev) =>
       prev.map((alert) =>
         alert.id === id
-          ? { ...alert, isActive: !alert.isActive, triggeredAt: undefined }
+          ? {
+              ...alert,
+              isActive: !alert.isActive,
+              triggeredAt: undefined,
+              lastTriggeredAt: undefined,
+            }
           : alert
       )
     );
@@ -168,6 +197,16 @@ export function AlertSystem({ data, symbol }) {
       case "price":
         return `$${value.toLocaleString()}`;
       case "volume":
+        // Format volume with K/M/B notation
+        if (value >= 1_000_000_000) {
+          return `${(value / 1_000_000_000).toFixed(1)}B`;
+        }
+        if (value >= 1_000_000) {
+          return `${(value / 1_000_000).toFixed(1)}M`;
+        }
+        if (value >= 1_000) {
+          return `${(value / 1_000).toFixed(1)}K`;
+        }
         return value.toLocaleString();
       case "volatility":
         return `${value.toFixed(2)}%`;
@@ -245,11 +284,15 @@ export function AlertSystem({ data, symbol }) {
 
         {/* Create New Alert */}
         <div className="bg-gray-50 p-3 rounded-lg space-y-3">
-          <div className="flex items-center space-x-1">
-            <Plus className="h-3 w-3 text-blue-600" />
-            <span className="text-xs font-medium">Create New Alert</span>
-          </div>
-
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-1">
+              <Plus className="h-3 w-3 text-blue-600" />
+              <span className="text-xs font-medium">Create New Alert</span>
+            </div>
+            <span className="text-[10px] text-muted-foreground">
+              30s cooldown
+            </span>
+          </div>{" "}
           <div className="grid grid-cols-2 gap-2">
             <Select
               value={newAlert.type}
@@ -307,11 +350,16 @@ export function AlertSystem({ data, symbol }) {
               </SelectContent>
             </Select>
           </div>
-
           <div className="flex space-x-1">
             <Input
               type="number"
-              placeholder={`Enter ${newAlert.type} value`}
+              placeholder={
+                newAlert.type === "volatility"
+                  ? "e.g., 2 for 2%"
+                  : newAlert.type === "price"
+                  ? "e.g., 89000"
+                  : "e.g., 3 for 3K"
+              }
               value={newAlert.threshold}
               onChange={(e) =>
                 setNewAlert((prev) => ({

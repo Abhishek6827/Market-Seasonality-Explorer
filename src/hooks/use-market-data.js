@@ -112,11 +112,11 @@ export function useMarketData(symbol = "BTCUSDT", timeFrame = "daily") {
             low,
             close,
             volume,
-            closeTime,
-            quoteAssetVolume,
-            numberOfTrades,
-            takerBuyBaseAssetVolume,
-            takerBuyQuoteAssetVolume,
+            _closeTime,
+            _quoteAssetVolume,
+            _numberOfTrades,
+            _takerBuyBaseAssetVolume,
+            _takerBuyQuoteAssetVolume,
           ] = kline;
 
           // Calculate volatility as (high - low) / close

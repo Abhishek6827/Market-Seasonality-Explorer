@@ -19,7 +19,7 @@ export function CalendarCell({
   timeFrame,
   filters,
   isSelected = false,
-  isInRange = false,
+  isInRange: _isInRange = false,
   isCurrentMonth = true,
   isToday = false,
   isHovered = false,

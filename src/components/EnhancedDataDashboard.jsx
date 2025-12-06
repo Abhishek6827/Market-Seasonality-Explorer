@@ -29,11 +29,11 @@ export function EnhancedDataDashboard({
   data,
   selectedDate,
   selectedDates = [],
-  timeFrame,
-  symbol,
+  timeFrame: _timeFrame,
+  symbol: _symbol,
   loading,
   error,
-  isComparisonMode,
+  isComparisonMode: _isComparisonMode,
 }) {
   // Enhanced data processing with technical indicators
   const processedData = useMemo(() => {

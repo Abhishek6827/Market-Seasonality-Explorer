@@ -96,13 +96,13 @@ export function ThemeControls({ onThemeChange, className = "" }) {
 
   return (
     <div className={`space-y-3 ${className}`}>
-      <div className="flex items-center space-x-1">
-        <Palette className="h-3 w-3 text-gray-500" />
-        <h3 className="text-xs font-medium">Themes</h3>
+      <div className="flex items-center gap-2 pb-2 border-b">
+        <Palette className="h-4 w-4 text-blue-600" />
+        <h3 className="text-sm font-semibold">Themes</h3>
       </div>
 
-      <div className="space-y-2">
-        <label className="text-xs font-medium text-gray-700 block">
+      <div className="space-y-1.5">
+        <label className="text-xs font-semibold text-gray-700 block">
           Color Scheme
         </label>
         <select
@@ -118,7 +118,7 @@ export function ThemeControls({ onThemeChange, className = "" }) {
         </select>
       </div>
 
-      <div className="grid grid-cols-2 gap-1.5">
+      <div className="grid grid-cols-2 gap-2">
         {Object.entries(COLOR_SCHEMES).map(([key, scheme]) => {
           const IconComponent = scheme.icon;
           return (
@@ -130,14 +130,14 @@ export function ThemeControls({ onThemeChange, className = "" }) {
                   onThemeChange(scheme);
                 }
               }}
-              className={`text-xs flex items-center space-x-1 justify-start h-7 px-2 border rounded ${
+              className={`text-xs flex items-center gap-1.5 justify-center h-8 px-2 border rounded transition-all ${
                 selectedTheme === key
-                  ? "bg-blue-500 text-white border-blue-600"
-                  : "bg-white border-gray-300 hover:bg-gray-50"
+                  ? "bg-blue-500 text-white border-blue-600 shadow-sm"
+                  : "bg-white border-gray-300 hover:bg-gray-50 hover:border-gray-400"
               }`}
             >
               <IconComponent className="h-3 w-3 flex-shrink-0" />
-              <span className="truncate text-[10px] sm:text-xs">
+              <span className="truncate text-xs font-medium">
                 {scheme.name}
               </span>
             </button>
@@ -145,31 +145,35 @@ export function ThemeControls({ onThemeChange, className = "" }) {
         })}
       </div>
 
-      <div className="space-y-2 p-1 bg-gray-50 rounded-lg">
-        <div className="text-xs font-medium text-gray-700">
-          Data Visualization Layers
+      <div className="space-y-2 p-2.5 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="text-xs font-semibold text-gray-700 flex items-center gap-1">
+          <span>📊</span>
+          <span>Data Visualization Layers</span>
         </div>
 
-        <div className="space-y-1">
-          <div className="text-[10px] text-gray-600 font-medium">
+        <div className="space-y-1.5">
+          <div className="text-xs text-gray-600 font-medium">
             🌡️ Volatility Heatmap
           </div>
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-4 gap-1.5">
             {Object.entries(COLOR_SCHEMES[selectedTheme].volatility).map(
               ([level, classes]) => (
                 <div
                   key={level}
-                  className={`p-1.5 rounded text-[10px] text-center ${classes} leading-tight`}
+                  className={`px-2 py-1.5 rounded text-[10px] text-center font-semibold ${classes} border shadow-sm`}
+                  style={{
+                    minHeight: "32px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
                 >
-                  <span className="block sm:hidden">
-                    {level.charAt(0).toUpperCase()}
-                  </span>
-                  <span className="hidden sm:block capitalize">{level}</span>
+                  <span className="capitalize leading-tight">{level}</span>
                 </div>
               )
             )}
           </div>
-          <div className="text-[9px] text-gray-500">
+          <div className="text-[10px] text-gray-500 text-center mt-1 leading-relaxed">
             Green (Low) → Yellow (Medium) → Orange (High) → Red (Very High)
           </div>
         </div>

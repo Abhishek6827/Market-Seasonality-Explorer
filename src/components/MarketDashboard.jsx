@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useMemo } from "react";
+import { motion } from "framer-motion";
 import { Card } from "./ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/Tabs";
 import { useMarketData } from "../hooks/use-market-data";
@@ -133,10 +134,10 @@ export function MarketDashboard() {
   return (
     <ErrorBoundary>
       <div
-        className="min-h-screen bg-background p-2 sm:p-4"
+        className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 dark:from-slate-950 dark:via-blue-950/30 dark:to-slate-950 p-3 sm:p-6"
         data-calendar-container
       >
-        <div className="mx-auto max-w-7xl space-y-3 sm:space-y-4">
+        <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
           {/* Header */}
           <ErrorBoundary>
             <FadeIn className="text-center space-y-2">
@@ -150,55 +151,94 @@ export function MarketDashboard() {
             </FadeIn>
           </ErrorBoundary>
 
-          {/* COMPACT Controls Layout */}
-          <div className="space-y-2">
-            {/* Row 1: Main Controls - More Compact */}
-            <ErrorBoundary>
-              <SlideIn direction="left">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
-                  {/* Filters - Takes more space */}
-                  <Card className="lg:col-span-6 p-2 sm:p-3">
-                    <FilterControls
-                      filters={filters}
-                      onFiltersChange={handleFiltersChange}
-                      loading={loading}
-                    />
-                  </Card>
+          {/* Controls Layout - Organized Grid with Canvas-based Shared Layout Animations */}
+          <ErrorBoundary>
+            <motion.div
+              layout
+              className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, staggerChildren: 0.1 }}
+            >
+              {/* Filters & Controls */}
+              <motion.div
+                layout
+                layoutId="filters"
+                className="md:col-span-2 flex"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15,
+                  delay: 0.1,
+                }}
+                whileHover={{ scale: 1.01 }}
+              >
+                <Card className="p-3 w-full flex flex-col shadow-sm hover:shadow-md transition-shadow">
+                  <FilterControls
+                    filters={filters}
+                    onFiltersChange={handleFiltersChange}
+                    loading={loading}
+                  />
+                </Card>
+              </motion.div>
 
-                  {/* Export - Compact */}
-                  <Card className="lg:col-span-3 p-2 sm:p-3">
-                    <ExportControls
-                      data={data}
-                      selectedDate={selectedDate}
-                      selectedDates={selectedDates}
-                      timeFrame={timeFrame}
-                      symbol={filters.symbol}
-                    />
-                  </Card>
+              {/* Export Data & Zoom */}
+              <motion.div
+                layout
+                layoutId="export"
+                className="flex"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15,
+                  delay: 0.2,
+                }}
+                whileHover={{ scale: 1.01 }}
+              >
+                <Card className="p-3 w-full flex flex-col shadow-sm hover:shadow-md transition-shadow">
+                  <ExportControls
+                    data={data}
+                    selectedDate={selectedDate}
+                    selectedDates={selectedDates}
+                    timeFrame={timeFrame}
+                    symbol={filters.symbol}
+                  />
 
-                  {/* Theme - Compact */}
-                  <Card className="lg:col-span-3 p-2 sm:p-3">
-                    <ThemeControls onThemeChange={handleThemeChange} />
-                  </Card>
-                </div>
-              </SlideIn>
-            </ErrorBoundary>
-
-            {/* Row 2: Zoom Controls - Single Row */}
-            <ErrorBoundary>
-              <SlideIn direction="right" delay={0.1}>
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-2">
-                  {/* Zoom Controls - Full width */}
-                  <Card className="lg:col-span-12 p-2 sm:p-3">
+                  {/* Zoom Controls - Moved below Export */}
+                  <div className="mt-4 pt-4 border-t">
                     <ZoomControls
                       zoomLevel={zoomLevel}
                       onZoomChange={handleZoomChange}
                     />
-                  </Card>
-                </div>
-              </SlideIn>
-            </ErrorBoundary>
-          </div>
+                  </div>
+                </Card>
+              </motion.div>
+
+              {/* Themes */}
+              <motion.div
+                layout
+                layoutId="themes"
+                className="flex"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 100,
+                  damping: 15,
+                  delay: 0.3,
+                }}
+                whileHover={{ scale: 1.01 }}
+              >
+                <Card className="p-3 w-full flex flex-col shadow-sm hover:shadow-md transition-shadow">
+                  <ThemeControls onThemeChange={handleThemeChange} />
+                </Card>
+              </motion.div>
+            </motion.div>
+          </ErrorBoundary>
 
           {/* Main Content */}
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 sm:gap-6">
