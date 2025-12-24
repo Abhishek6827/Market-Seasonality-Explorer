@@ -16,28 +16,28 @@ export default defineConfig({
       output: {
         manualChunks: {
           // Vendor chunk for React and related libraries
-          'react-vendor': ['react', 'react-dom', 'react/jsx-runtime'],
-          
+          "react-vendor": ["react", "react-dom", "react/jsx-runtime"],
+
           // UI library chunks
-          'radix-ui': [
-            '@radix-ui/react-select',
-            '@radix-ui/react-switch',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-label',
-            '@radix-ui/react-slot',
+          "radix-ui": [
+            "@radix-ui/react-select",
+            "@radix-ui/react-switch",
+            "@radix-ui/react-tabs",
+            "@radix-ui/react-label",
+            "@radix-ui/react-slot",
           ],
-          
+
           // Animation library
-          'framer-motion': ['framer-motion'],
-          
+          "framer-motion": ["framer-motion"],
+
           // Date utilities
-          'date-utils': ['date-fns'],
-          
+          "date-utils": ["date-fns"],
+
           // Chart and visualization
-          'charts': ['recharts'],
-          
+          charts: ["recharts"],
+
           // Icons
-          'icons': ['lucide-react'],
+          icons: ["lucide-react"],
         },
       },
     },
